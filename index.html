@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>XSS Vulnerable Web App</title>
+</head>
+<body>
+    <h1>XSS Vulnerable Web App</h1>
+    <input type="text" id="comment" placeholder="Enter comment">
+    <button onclick="postComment()">Post</button>
+    <h2>Comments</h2>
+    <div id="comments"></div>
+    
+    <h2>Search</h2>
+    <input type="text" id="search">
+    <button onclick="search()">Search</button>
+    <div id="searchResult"></div>
+
+    <h2>DOM-Based XSS</h2>
+    <p id="output"></p>
+    <script>
+        var query = window.location.hash.substring(1);
+        document.getElementById("output").innerHTML = query;
+
+        function postComment() {
+            let comment = document.getElementById("comment").value;
+            fetch('http://127.0.0.1:5000/comment', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({comment: comment})
+            })
+            .then(response => response.json())
+            .then(data => { alert(data.message); loadComments(); });
+        }
+        
+        function loadComments() {
+            fetch('http://127.0.0.1:5000/comments')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("comments").innerHTML = data.map(c => `<p>${c}</p>`).join('');
+            });
+        }
+        
+        function search() {
+            let query = document.getElementById("search").value;
+            document.getElementById("searchResult").innerHTML = `<h1>Search Results for: ${query}</h1>`;
+        }
+        
+        loadComments();
+    </script>
+</body>
+</html>
+
+
+
