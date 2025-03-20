@@ -1,0 +1,7 @@
+- The backend (Flask) handles the database (`database.db`).
+- Uses `sqlite3` to store and retrieve comments.
+- `init_db()` initializes the database.
+- API Endpoints:
+  - `GET /comments` → Fetch all comments.
+  - `POST /comment` → Insert a new comment.
+
