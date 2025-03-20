@@ -1,54 +1,110 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>XSS Vulnerable Web App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Vulnerable App</title>
+    <script>
+        let currentUser = null;
+
+        async function checkSession() {
+            const response = await fetch("http://127.0.0.1:5000/session");
+            const data = await response.json();
+            if (data.logged_in) {
+                currentUser = data.user;
+                document.getElementById("auth-section").style.display = "none";
+                document.getElementById("comment-section").style.display = "block";
+                document.getElementById("welcome").innerText = "Welcome, " + currentUser;
+            }
+        }
+
+        async function signup() {
+            const username = document.getElementById("signup-username").value;
+            const password = document.getElementById("signup-password").value;
+            const response = await fetch("http://127.0.0.1:5000/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            alert(data.message || data.error);
+        }
+
+        async function signin() {
+            const username = document.getElementById("signin-username").value;
+            const password = document.getElementById("signin-password").value;
+            const response = await fetch("http://127.0.0.1:5000/signin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            if (data.message) {
+                currentUser = username;
+                document.getElementById("auth-section").style.display = "none";
+                document.getElementById("comment-section").style.display = "block";
+                document.getElementById("welcome").innerText = "Welcome, " + currentUser;
+            }
+            alert(data.message || data.error);
+        }
+
+        async function logout() {
+            await fetch("http://127.0.0.1:5000/logout", { method: "POST" });
+            currentUser = null;
+            document.getElementById("auth-section").style.display = "block";
+            document.getElementById("comment-section").style.display = "none";
+        }
+
+        async function postComment() {
+            const comment = document.getElementById("comment").value;
+            const response = await fetch("http://127.0.0.1:5000/comment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ comment })
+            });
+            const data = await response.json();
+            alert(data.message || data.error);
+            loadComments();
+        }
+
+        async function loadComments() {
+            const response = await fetch("http://127.0.0.1:5000/comments");
+            const comments = await response.json();
+            document.getElementById("comments").innerHTML = comments.map(c => `<p>${c}</p>`).join("");
+        }
+
+        window.onload = function() {
+            checkSession();
+            loadComments();
+        }
+    </script>
 </head>
 <body>
-    <h1>XSS Vulnerable Web App</h1>
-    <input type="text" id="comment" placeholder="Enter comment">
-    <button onclick="postComment()">Post</button>
-    <h2>Comments</h2>
-    <div id="comments"></div>
+    <h2>XSS Vulnerable Web App</h2>
+    <div id="auth-section">
+        <h3>Sign Up</h3>
+        <input type="text" id="signup-username" placeholder="Username">
+        <input type="password" id="signup-password" placeholder="Password">
+        <button onclick="signup()">Sign Up</button>
+        
+        <h3>Sign In</h3>
+        <input type="text" id="signin-username" placeholder="Username">
+        <input type="password" id="signin-password" placeholder="Password">
+        <button onclick="signin()">Sign In</button>
+    </div>
     
-    <h2>Search</h2>
-    <input type="text" id="search">
-    <button onclick="search()">Search</button>
-    <div id="searchResult"></div>
-
-    <h2>DOM-Based XSS</h2>
-    <p id="output"></p>
-    <script>
-        var query = window.location.hash.substring(1);
-        document.getElementById("output").innerHTML = query;
-
-        function postComment() {
-            let comment = document.getElementById("comment").value;
-            fetch('http://127.0.0.1:5000/comment', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({comment: comment})
-            })
-            .then(response => response.json())
-            .then(data => { alert(data.message); loadComments(); });
-        }
-        
-        function loadComments() {
-            fetch('http://127.0.0.1:5000/comments')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById("comments").innerHTML = data.map(c => `<p>${c}</p>`).join('');
-            });
-        }
-        
-        function search() {
-            let query = document.getElementById("search").value;
-            document.getElementById("searchResult").innerHTML = `<h1>Search Results for: ${query}</h1>`;
-        }
-        
-        loadComments();
-    </script>
+    <div id="comment-section" style="display:none;">
+        <h3 id="welcome"></h3>
+        <button onclick="logout()">Logout</button>
+        <h3>Post a Comment</h3>
+        <textarea id="comment" placeholder="Enter your comment"></textarea>
+        <button onclick="postComment()">Post</button>
+        <h3>Comments</h3>
+        <div id="comments"></div>
+    </div>
 </body>
 </html>
+
 
 
 
